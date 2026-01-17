@@ -25,7 +25,6 @@ func NewRouter(
 	// /api/v1/categories
 	v1 := router.Group("/api/v1")
 	// All routes require internal API key
-	v1.Use(middleware.InternalAPIKey(cfg.InternalAPIKey))
 
 	// V1 ROUTES
 	{
@@ -75,6 +74,7 @@ func NewRouter(
 		// ======================================================================
 		// Extract user context from BFF headers for all /users routes
 		v1.Use(middleware.ExtractUserContext())
+		v1.Use(middleware.InternalAPIKey(cfg.InternalAPIKey))
 		users := v1.Group("/users")
 		{
 			// GET /api/v1/users/:userId/combos - Get user's saved combos

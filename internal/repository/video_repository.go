@@ -42,7 +42,7 @@ func (r *VideoRepository) FindByTrickID(ctx context.Context, trickID int) ([]mod
 			id, trick_id, video_url, thumbnail_url,
 			uploaded_by, performer_user_id, performer_name,
 			is_featured, created_at
-		FROM trick_videos
+		FROM trick_data.trick_videos
 		WHERE trick_id = $1
 		ORDER BY is_featured DESC, created_at DESC
 	`
@@ -71,7 +71,7 @@ func (r *VideoRepository) GetFeaturedByTrickID(ctx context.Context, trickID int)
 			id, trick_id, video_url, thumbnail_url,
 			uploaded_by, performer_user_id, performer_name,
 			is_featured, created_at
-		FROM trick_videos
+		FROM trick_data.trick_videos
 		WHERE trick_id = $1 AND is_featured = true
 		LIMIT 1
 	`

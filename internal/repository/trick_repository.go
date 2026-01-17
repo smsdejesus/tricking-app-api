@@ -94,7 +94,7 @@ func (r *TrickRepository) GetByID(ctx context.Context, id int) (*models.Trick, e
 			id, name, description, difficulty, execution_notes,
 			created_by, creator_name, created_at, updated_at,
 			takeoff_stance_id, landing_stance_id, flip_id, rotation, weight
-		FROM tricks
+		FROM trick_data.tricks
 		WHERE id = $1
 	`
 
@@ -119,7 +119,8 @@ func (r *TrickRepository) GetByID(ctx context.Context, id int) (*models.Trick, e
 		&trick.Rotation,
 		&trick.Weight,
 	)
-
+	fmt.Println("Retrieved trick:", trick)
+	fmt.Println("Retrieved ERROR:", err)
 	if err != nil {
 		// Check if it's a "no rows" error
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -140,7 +141,7 @@ func (r *TrickRepository) FindAll(ctx context.Context) ([]models.Trick, error) {
 			id, name, description, difficulty, execution_notes,
 			created_by, creator_name, created_at, updated_at,
 			takeoff_stance_id, landing_stance_id, flip_id, rotation, weight
-		FROM tricks
+		FROM trick_data.tricks
 		ORDER BY name ASC
 	`
 
@@ -165,7 +166,7 @@ func (r *TrickRepository) FindSimpleList(ctx context.Context) ([]models.TrickSim
 	// Only select the columns we need - more efficient!
 	query := `
 		SELECT id, name
-		FROM tricks
+		FROM trick_data.tricks
 		ORDER BY name ASC
 	`
 
@@ -201,7 +202,7 @@ func (r *TrickRepository) FindByFilters(ctx context.Context, filters TrickFilter
 			id, name, description, difficulty, execution_notes,
 			created_by, creator_name, created_at, updated_at,
 			takeoff_stance_id, landing_stance_id, flip_id, rotation, weight
-		FROM tricks
+		FROM trick_data.tricks
 		WHERE 1=1
 	`
 	// "WHERE 1=1" is a trick that makes it easier to append AND clauses

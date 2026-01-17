@@ -9,6 +9,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/joho/godotenv"
+
 	"tricking-api/internal/config"
 	"tricking-api/internal/database"
 	"tricking-api/internal/handlers"
@@ -18,6 +20,11 @@ import (
 )
 
 func main() {
+	// Load .env file (ignore error if file doesn't exist, e.g., in production)
+	if err := godotenv.Load(); err != nil {
+		log.Println("No .env file found, using environment variables")
+	}
+
 	// STEP 1: Load Configuration
 	cfg, err := config.Load()
 	if err != nil {

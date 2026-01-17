@@ -42,28 +42,28 @@ type Trick struct {
 	// Name is the trick name (e.g., "Backflip", "540 Kick")
 	Name string `db:"name" json:"name"`
 
-	// Description explains what the trick is
-	Description string `db:"description" json:"description"`
+	// Description explains what the trick is (nullable)
+	Description *string `db:"description" json:"description,omitempty"`
 
 	// Difficulty is a numeric rating (e.g., 1-10)
-	// Using int64 to match PostgreSQL bigint
-	Difficulty int64 `db:"difficulty" json:"difficulty"`
+	// Using pointer (*int64) to allow NULL values from database
+	Difficulty *int64 `db:"difficulty" json:"difficulty,omitempty"`
 
-	// ExecutionNotes provides tips on how to perform the trick
-	ExecutionNotes string `db:"execution_notes" json:"execution_notes"`
+	// ExecutionNotes provides tips on how to perform the trick (nullable)
+	ExecutionNotes *string `db:"execution_notes" json:"execution_notes,omitempty"`
 
 	// CreatedBy is the UUID of the user who created this trick entry
 	// Using pointer (*uuid.UUID) allows this to be null in the database
 	CreatedBy *uuid.UUID `db:"created_by" json:"-"` // json:"-" hides this from API responses
 
-	// CreatorName is denormalized for display without joins
-	CreatorName string `db:"creator_name" json:"creator_name"`
+	// CreatorName is denormalized for display without joins (nullable)
+	CreatorName *string `db:"creator_name" json:"creator_name,omitempty"`
 
-	// CreatedAt is when this record was created
-	CreatedAt time.Time `db:"created_at" json:"created_at"`
+	// CreatedAt is when this record was created (has default but nullable)
+	CreatedAt *time.Time `db:"created_at" json:"created_at,omitempty"`
 
-	// UpdatedAt is when this record was last modified
-	UpdatedAt time.Time `db:"updated_at" json:"updated_at"`
+	// UpdatedAt is when this record was last modified (has default but nullable)
+	UpdatedAt *time.Time `db:"updated_at" json:"updated_at,omitempty"`
 
 	// TakeoffStanceID links to the stance table (foreign key)
 	// Pointer allows null values
@@ -75,8 +75,8 @@ type Trick struct {
 	// FlipID categorizes the type of flip (foreign key to flips/categories table)
 	FlipID *int `db:"flip_id" json:"flip_id,omitempty"`
 
-	// Rotation is the degrees of rotation (e.g., 180, 360, 540)
-	Rotation int `db:"rotation" json:"rotation"`
+	// Rotation is the degrees of rotation (e.g., 180, 360, 540) - nullable
+	Rotation *int `db:"rotation" json:"rotation,omitempty"`
 
 	// Weight is used for combo generation algorithm (affects selection probability)
 	Weight int16 `db:"weight" json:"weight"`
@@ -152,17 +152,17 @@ type TrickSimpleResponse struct {
 // TrickDetailResponse is the full trick data without videos
 // Used for the "simple" version of the trick detail endpoint
 type TrickDetailResponse struct {
-	ID              int       `json:"id"`
-	Name            string    `json:"name"`
-	Description     string    `json:"description"`
-	Difficulty      int64     `json:"difficulty"`
-	ExecutionNotes  string    `json:"execution_notes"`
-	CreatorName     string    `json:"creator_name"`
-	TakeoffStanceID *int      `json:"takeoff_stance_id,omitempty"`
-	LandingStanceID *int      `json:"landing_stance_id,omitempty"`
-	Rotation        int       `json:"rotation"`
-	CreatedAt       time.Time `json:"created_at"`
-	UpdatedAt       time.Time `json:"updated_at"`
+	ID              int        `json:"id"`
+	Name            string     `json:"name"`
+	Description     *string    `json:"description,omitempty"`
+	Difficulty      *int64     `json:"difficulty,omitempty"`
+	ExecutionNotes  *string    `json:"execution_notes,omitempty"`
+	CreatorName     *string    `json:"creator_name,omitempty"`
+	TakeoffStanceID *int       `json:"takeoff_stance_id,omitempty"`
+	LandingStanceID *int       `json:"landing_stance_id,omitempty"`
+	Rotation        *int       `json:"rotation,omitempty"`
+	CreatedAt       *time.Time `json:"created_at,omitempty"`
+	UpdatedAt       *time.Time `json:"updated_at,omitempty"`
 }
 
 // VideoResponse is the video data for API responses

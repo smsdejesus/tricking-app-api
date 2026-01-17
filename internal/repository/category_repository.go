@@ -48,7 +48,7 @@ func NewCategoryRepository(pool *pgxpool.Pool) *CategoryRepository {
 func (r *CategoryRepository) FindAll(ctx context.Context) ([]models.Category, error) {
 	query := `
 		SELECT id, name, COALESCE(type, '') as type
-		FROM categories
+		FROM trick_data.categories
 		ORDER BY name ASC
 	`
 	// COALESCE handles NULL values - if type is NULL, use empty string
@@ -72,7 +72,7 @@ func (r *CategoryRepository) FindAll(ctx context.Context) ([]models.Category, er
 func (r *CategoryRepository) GetByID(ctx context.Context, id int) (*models.Category, error) {
 	query := `
 		SELECT id, name, COALESCE(type, '') as type
-		FROM categories
+		FROM trick_data.categories
 		WHERE id = $1
 	`
 

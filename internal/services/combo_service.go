@@ -214,7 +214,10 @@ func (s *ComboService) buildComboResponse(tricks []models.Trick) *models.Generat
 
 	for _, trick := range tricks {
 		trickResponses = append(trickResponses, trick.ToSimpleResponse())
-		totalDifficulty += trick.Difficulty
+		// Handle nullable Difficulty - only add if not nil
+		if trick.Difficulty != nil {
+			totalDifficulty += *trick.Difficulty
+		}
 		notationParts = append(notationParts, trick.Name)
 	}
 
