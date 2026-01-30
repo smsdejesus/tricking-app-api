@@ -25,7 +25,7 @@ var ErrTrickNotFound = errors.New("trick not found")
 // TrickServiceInterface defines the contract for trick business operations
 type TrickServiceInterface interface {
 	GetTrickSimple(ctx context.Context, id int) (*models.TrickDetailResponse, error)
-	GetTrickDictionary(ctx context.Context, id int) (*models.TrickDictionaryResponse, error)
+	GetTrickFullDetails(ctx context.Context, id int) (*models.TrickFullDetailsResponse, error)
 	GetTricksList(ctx context.Context) ([]models.TrickSimpleResponse, error)
 }
 
@@ -41,8 +41,8 @@ type TrickService struct {
 }
 
 // NewTrickService creates a new TrickService instance
-// Notice we accept interfaces, not concrete types - this enables mocking for tests
-func NewTrickService(trickRepo *repository.TrickRepository, videoRepo *repository.VideoRepository) *TrickService {
+// Accepts interfaces, not concrete types - this enables mocking for tests
+func NewTrickService(trickRepo repository.TrickRepositoryInterface, videoRepo repository.VideoRepositoryInterface) *TrickService {
 	return &TrickService{
 		trickRepo: trickRepo,
 		videoRepo: videoRepo,
@@ -70,9 +70,8 @@ func (s *TrickService) GetTrickSimple(ctx context.Context, id int) (*models.Tric
 	return &response, nil
 }
 
-// GetTrickDictionary retrieves full trick details WITH videos
-// "complicated/dictionary" endpoint
-func (s *TrickService) GetTrickDictionary(ctx context.Context, id int) (*models.TrickDictionaryResponse, error) {
+// GetTrickFullDetails retrieves full trick details WITH videos
+func (s *TrickService) GetTrickFullDetails(ctx context.Context, id int) (*models.TrickFullDetailsResponse, error) {
 	// ==========================================================================
 	// ORCHESTRATION EXAMPLE
 	// ==========================================================================
@@ -112,9 +111,8 @@ func (s *TrickService) GetTrickDictionary(ctx context.Context, id int) (*models.
 	}
 
 	// Step 4: Build the combined response
-	response := &models.TrickDictionaryResponse{
+	response := &models.TrickFullDetailsResponse{
 		TrickDetailResponse: trick.ToDetailResponse(),
-		Videos:              videoResponses,
 		FeaturedVideo:       featuredVideo,
 	}
 

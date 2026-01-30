@@ -39,10 +39,6 @@ import (
 	"tricking-api/internal/services"
 )
 
-// =============================================================================
-// HANDLER STRUCT
-// =============================================================================
-
 // TrickHandler handles HTTP requests for trick endpoints
 type TrickHandler struct {
 	// Depend on interface, not concrete type (enables testing with mocks)
@@ -54,18 +50,7 @@ func NewTrickHandler(trickService *services.TrickService) *TrickHandler {
 	return &TrickHandler{trickService: trickService}
 }
 
-// =============================================================================
-// ENDPOINT: GET /tricks
-// PURPOSE: List all tricks (minimal data for dropdowns)
-// =============================================================================
-
 // ListTricks returns a simple list of all tricks
-// @Summary List all tricks
-// @Description Get a minimal list of tricks for dropdown menus
-// @Tags tricks
-// @Produce json
-// @Success 200 {array} models.TrickSimpleResponse
-// @Router /tricks [get]
 func (h *TrickHandler) ListTricks(c *gin.Context) {
 	// Call service method
 	tricks, err := h.trickService.GetTricksList(c.Request.Context())
@@ -88,21 +73,7 @@ func (h *TrickHandler) ListTricks(c *gin.Context) {
 	})
 }
 
-// =============================================================================
-// ENDPOINT: GET /tricks/:id
-// PURPOSE: Get simple trick details (no videos)
-// =============================================================================
-
 // GetTrickSimple returns basic trick details
-// @Summary Get trick details (simple)
-// @Description Get basic trick information without videos
-// @Tags tricks
-// @Produce json
-// @Param id path int true "Trick ID"
-// @Success 200 {object} models.TrickDetailResponse
-// @Failure 400 {object} map[string]string "Invalid ID"
-// @Failure 404 {object} map[string]string "Trick not found"
-// @Router /tricks/{id} [get]
 func (h *TrickHandler) GetTrickSimple(c *gin.Context) {
 	// ==========================================================================
 	// PARSE URL PARAMETER
@@ -146,22 +117,9 @@ func (h *TrickHandler) GetTrickSimple(c *gin.Context) {
 	c.JSON(http.StatusOK, trick)
 }
 
-// =============================================================================
-// ENDPOINT: GET /tricks/:id/dictionary
-// PURPOSE: Get full trick details including videos
-// =============================================================================
+// GetTrickFullDetails returns full trick details with videos
 
-// GetTrickDictionary returns full trick details with videos
-// @Summary Get trick dictionary page
-// @Description Get complete trick information including all videos
-// @Tags tricks
-// @Produce json
-// @Param id path int true "Trick ID"
-// @Success 200 {object} models.TrickDictionaryResponse
-// @Failure 400 {object} map[string]string "Invalid ID"
-// @Failure 404 {object} map[string]string "Trick not found"
-// @Router /tricks/{id}/dictionary [get]
-func (h *TrickHandler) GetTrickDictionary(c *gin.Context) {
+func (h *TrickHandler) GetTrickFullDetails(c *gin.Context) {
 	// Parse ID (same as above)
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
@@ -173,7 +131,7 @@ func (h *TrickHandler) GetTrickDictionary(c *gin.Context) {
 	}
 
 	// Call the dictionary service method (includes videos)
-	trick, err := h.trickService.GetTrickDictionary(c.Request.Context(), id)
+	trick, err := h.trickService.GetTrickFullDetails(c.Request.Context(), id)
 	if err != nil {
 		if errors.Is(err, services.ErrTrickNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{
@@ -190,37 +148,3 @@ func (h *TrickHandler) GetTrickDictionary(c *gin.Context) {
 
 	c.JSON(http.StatusOK, trick)
 }
-
-// =============================================================================
-// RESPONSE FORMAT NOTES
-// =============================================================================
-//
-// You have flexibility in how you format responses. Common patterns:
-//
-// PATTERN 1: Wrap in data object (recommended for consistency)
-// c.JSON(200, gin.H{
-//     "data": trick,
-//     "meta": gin.H{"timestamp": time.Now()},
-// })
-//
-// PATTERN 2: Direct object (simpler, used above)
-// c.JSON(200, trick)
-//
-// PATTERN 3: Envelope for lists (shown in ListTricks)
-// c.JSON(200, gin.H{
-//     "tricks": tricks,
-//     "count": len(tricks),
-//     "page": 1,
-//     "total_pages": 5,
-// })
-//
-// PATTERN 4: Standard error format
-// c.JSON(400, gin.H{
-//     "error": gin.H{
-//         "code": "INVALID_ID",
-//         "message": "Trick ID must be a positive integer",
-//     },
-// })
-//
-// Choose one pattern and use it consistently across your API!
-// =============================================================================

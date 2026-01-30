@@ -1,24 +1,3 @@
-// =============================================================================
-// FILE: internal/models/models.go
-// PURPOSE: Define data structures for database entities and API responses
-// =============================================================================
-//
-// MODELS vs DTOs:
-// - Model: Represents a database table row (matches your PostgreSQL columns)
-// - DTO (Data Transfer Object): Represents API request/response structure
-//
-// WHY SEPARATE THEM?
-// Your database structure might differ from what you want to expose in your API.
-// For example, you might want to:
-// - Hide internal fields (like created_by UUID)
-// - Combine data from multiple tables
-// - Rename fields for cleaner API responses
-// - Add computed fields not stored in the database
-//
-// NAMING: Models often match table names (Trick for tricks table).
-// DTOs often have suffixes like Response, Request, DTO, etc.
-// =============================================================================
-
 package models
 
 import (
@@ -28,7 +7,7 @@ import (
 )
 
 // =============================================================================
-// DATABASE MODELS - These match your PostgreSQL table structures
+// DATABASE MODELS - These match PostgreSQL table structures
 // =============================================================================
 
 // Trick represents a row in the "tricks" table
@@ -36,8 +15,10 @@ import (
 // The `json:"field_name"` tags control JSON serialization for API responses
 type Trick struct {
 	// ID is the primary key
-	// NAMING: "ID" not "Id" - Go convention for acronyms is all caps
 	ID int `db:"id" json:"id"`
+
+	// URL-friendly unique identifier for the trick
+	Slug string `db:"slug" json:"slug"`
 
 	// Name is the trick name (e.g., "Backflip", "540 Kick")
 	Name string `db:"name" json:"name"`
@@ -114,16 +95,15 @@ type TrickVideo struct {
 }
 
 // Category represents a trick category (for filtering)
-// You'll need to create this table if it doesn't exist
+// NEED to create this table if it doesn't exist
 type Category struct {
-	ID   int    `db:"id" json:"id"`
-	Name string `db:"name" json:"name"`
-	// Type could be "flip", "kick", "twist", etc.
-	Type string `db:"type" json:"type,omitempty"`
+	ID       int    `db:"id" json:"id"`
+	Name     string `db:"name" json:"name"`
+	ParentID *int   `db:"parent_id" json:"parent_id,omitempty"`
 }
 
 // Combo represents a saved combo by a user
-// You'll need to create this table if it doesn't exist
+// NEED to create this table if it doesn't exist
 type Combo struct {
 	ID        int64     `db:"id" json:"id"`
 	UserID    uuid.UUID `db:"user_id" json:"-"`
@@ -175,15 +155,12 @@ type VideoResponse struct {
 	CreatedAt     time.Time `json:"created_at"`
 }
 
-// TrickDictionaryResponse is the "complicated" version with videos
+// TrickFullDetailsResponse is the "complicated" version with video
 // This is like a dictionary page for the trick with all available information
-type TrickDictionaryResponse struct {
+type TrickFullDetailsResponse struct {
 	// Embed TrickDetailResponse to include all its fields
 	// This is Go's composition pattern - avoids repeating fields
 	TrickDetailResponse
-
-	// Videos is a slice of all videos for this trick
-	Videos []VideoResponse `json:"videos"`
 
 	// FeaturedVideo is the primary video (convenience field)
 	// Pointer allows null if no featured video exists
@@ -200,17 +177,14 @@ type ComboResponse struct {
 
 // GeneratedComboResponse represents a newly generated combo
 type GeneratedComboResponse struct {
-	Tricks          []TrickSimpleResponse `json:"tricks"`
-	TotalDifficulty int64                 `json:"total_difficulty"`
-	// ComboNotation could be something like "Backflip > 540 Kick > Webster"
-	ComboNotation string `json:"combo_notation"`
+	Tricks []TrickSimpleResponse `json:"tricks"`
 }
 
 // CategoryResponse is for the categories list endpoint
 type CategoryResponse struct {
-	ID   int    `json:"id"`
-	Name string `json:"name"`
-	Type string `json:"type,omitempty"`
+	ID       int    `json:"id"`
+	Name     string `json:"name"`
+	ParentID *int   `json:"parent_id,omitempty"`
 }
 
 // =============================================================================
@@ -224,19 +198,16 @@ type CategoryResponse struct {
 // - `binding:"required"` makes the field mandatory (Gin validation)
 type ComboGenerateRequest struct {
 	// Size is the number of tricks in the combo (REQUIRED)
-	Size int `json:"size" form:"size" binding:"required,min=1,max=20"`
+	Size int `json:"size" form:"size" binding:"required,min=1,max=10"`
 
 	// The following filters are OPTIONAL (no binding:"required")
 
 	// MaxDifficulty limits individual trick difficulty
 	MaxDifficulty *int64 `json:"max_difficulty" form:"max_difficulty" binding:"omitempty,min=1"`
 
-	// MinDifficulty sets minimum trick difficulty
-	MinDifficulty *int64 `json:"min_difficulty" form:"min_difficulty" binding:"omitempty,min=1"`
-
 	// CategoryIDs filters tricks to specific categories
 	// In query string: ?category_ids=1&category_ids=2&category_ids=3
-	CategoryIDs []int `json:"category_ids" form:"category_ids"`
+	ExcludeCategoryIDs []int `json:"category_ids" form:"category_ids"`
 
 	// TrickIDs specifies exact tricks to include (for partial customization)
 	TrickIDs []int `json:"trick_ids" form:"trick_ids"`
@@ -247,7 +218,7 @@ type ComboGenerateRequest struct {
 
 // ComboGenerateSimpleRequest only requires size (no filters)
 type ComboGenerateSimpleRequest struct {
-	Size int `json:"size" form:"size" binding:"required,min=1,max=20"`
+	Size int `json:"size" form:"size" binding:"required,min=1,max=10"`
 }
 
 // =============================================================================
@@ -295,8 +266,8 @@ func (v *TrickVideo) ToResponse() VideoResponse {
 // ToResponse converts a Category model to CategoryResponse DTO
 func (c *Category) ToResponse() CategoryResponse {
 	return CategoryResponse{
-		ID:   c.ID,
-		Name: c.Name,
-		Type: c.Type,
+		ID:       c.ID,
+		Name:     c.Name,
+		ParentID: c.ParentID,
 	}
 }

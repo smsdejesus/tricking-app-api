@@ -1,17 +1,3 @@
-// =============================================================================
-// FILE: internal/services/combo_service.go
-// PURPOSE: Business logic for combo operations, including combo generation
-// =============================================================================
-//
-// This service handles:
-// 1. Retrieving user's saved combos
-// 2. Generating new combos based on filters (the complex algorithm)
-// 3. Generating simple combos based only on size
-//
-// The combo generation algorithm is a great example of business logic that
-// belongs in the service layer, not in handlers or repositories.
-// =============================================================================
-
 package services
 
 import (
@@ -19,34 +5,22 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
-	"strings"
 	"time"
 
 	"tricking-api/internal/models"
 	"tricking-api/internal/repository"
 )
 
-// =============================================================================
 // CUSTOM ERRORS
-// =============================================================================
-
 var (
 	ErrInsufficientTricks = errors.New("not enough tricks available for requested combo size")
 	ErrInvalidComboSize   = errors.New("combo size must be at least 1")
 )
 
-// =============================================================================
-// SERVICE INTERFACE
-// =============================================================================
-
 type ComboServiceInterface interface {
-	GenerateCombo(ctx context.Context, req models.ComboGenerateRequest) (*models.GeneratedComboResponse, error)
+	GenerateComboWithFilters(ctx context.Context, req models.ComboGenerateRequest) (*models.GeneratedComboResponse, error)
 	GenerateSimpleCombo(ctx context.Context, size int) (*models.GeneratedComboResponse, error)
 }
-
-// =============================================================================
-// SERVICE IMPLEMENTATION
-// =============================================================================
 
 type ComboService struct {
 	trickRepo repository.TrickRepositoryInterface
@@ -54,7 +28,7 @@ type ComboService struct {
 }
 
 // NewComboService creates a new ComboService instance
-func NewComboService(trickRepo *repository.TrickRepository) *ComboService {
+func NewComboService(trickRepo repository.TrickRepositoryInterface) *ComboService {
 	return &ComboService{
 		trickRepo: trickRepo,
 		// Create a seeded random generator
@@ -62,9 +36,9 @@ func NewComboService(trickRepo *repository.TrickRepository) *ComboService {
 	}
 }
 
-// GenerateCombo creates a new combo based on filters
+// GenerateComboWithFilters creates a new combo based on filters
 // This is the "complicated" version with all filter options
-func (s *ComboService) GenerateCombo(ctx context.Context, req models.ComboGenerateRequest) (*models.GeneratedComboResponse, error) {
+func (s *ComboService) GenerateComboWithFilters(ctx context.Context, req models.ComboGenerateRequest) (*models.GeneratedComboResponse, error) {
 	// ==========================================================================
 	// VALIDATION
 	// ==========================================================================
@@ -77,9 +51,8 @@ func (s *ComboService) GenerateCombo(ctx context.Context, req models.ComboGenera
 	// ==========================================================================
 	// First, get all tricks that match the filters
 	filters := repository.TrickFilters{
-		MinDifficulty:   req.MinDifficulty,
 		MaxDifficulty:   req.MaxDifficulty,
-		CategoryIDs:     req.CategoryIDs,
+		CategoryIDs:     req.ExcludeCategoryIDs,
 		ExcludeTrickIDs: req.ExcludeTrickIDs,
 	}
 
@@ -143,21 +116,6 @@ func (s *ComboService) GenerateSimpleCombo(ctx context.Context, size int) (*mode
 // selectTricksWeighted selects n tricks using weighted random selection
 // Tricks with higher weight are more likely to be selected
 func (s *ComboService) selectTricksWeighted(candidates []models.Trick, count int) []models.Trick {
-	// ==========================================================================
-	// WEIGHTED RANDOM SELECTION ALGORITHM
-	// ==========================================================================
-	//
-	// How it works:
-	// 1. Calculate total weight of all candidates
-	// 2. For each selection:
-	//    a. Pick a random number from 0 to total_weight
-	//    b. Walk through candidates, subtracting each weight
-	//    c. When we hit 0 or below, that's our pick
-	//    d. Remove picked trick from candidates (no duplicates)
-	//
-	// Time complexity: O(n * count) where n = len(candidates)
-	// For small combos, this is fine. For very large selections, consider
-	// using a more efficient algorithm like alias method.
 
 	// Make a copy to avoid modifying the original slice
 	available := make([]models.Trick, len(candidates))
@@ -209,25 +167,13 @@ func (s *ComboService) selectTricksWeighted(candidates []models.Trick, count int
 func (s *ComboService) buildComboResponse(tricks []models.Trick) *models.GeneratedComboResponse {
 	// Convert to simple responses
 	trickResponses := make([]models.TrickSimpleResponse, 0, len(tricks))
-	var totalDifficulty int64
-	var notationParts []string
 
 	for _, trick := range tricks {
 		trickResponses = append(trickResponses, trick.ToSimpleResponse())
-		// Handle nullable Difficulty - only add if not nil
-		if trick.Difficulty != nil {
-			totalDifficulty += *trick.Difficulty
-		}
-		notationParts = append(notationParts, trick.Name)
 	}
 
-	// Build notation string like "Backflip > 540 Kick > Webster"
-	notation := strings.Join(notationParts, " > ")
-
 	return &models.GeneratedComboResponse{
-		Tricks:          trickResponses,
-		TotalDifficulty: totalDifficulty,
-		ComboNotation:   notation,
+		Tricks: trickResponses,
 	}
 }
 

@@ -1,13 +1,5 @@
 // =============================================================================
-// FILE: internal/repository/combo_repository.go
-// PURPOSE: Database operations for saved combos
-// =============================================================================
-//
-// This handles user-saved combos. A combo is a sequence of tricks.
-// The data model uses a junction table (combo_tricks) for the many-to-many
-// relationship between combos and tricks.
-//
-// TABLE STRUCTURE (you'll need to create these):
+// TABLE STRUCTURE (need to create these):
 //
 // CREATE TABLE combos (
 //     id BIGSERIAL PRIMARY KEY,

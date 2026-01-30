@@ -25,16 +25,6 @@ func NewUserHandler(userService *services.UserService) *UserHandler {
 }
 
 // GetUserCombos returns all saved combos for a user
-// @Summary Get user's saved combos
-// @Description Retrieve all combos saved by a specific user
-// @Tags users
-// @Produce json
-// @Param userId path string true "User UUID"
-// @Success 200 {object} map[string]interface{} "combos array with count"
-// @Failure 400 {object} map[string]string "Invalid user ID"
-// @Failure 403 {object} map[string]string "Access denied"
-// @Failure 500 {object} map[string]string "Server error"
-// @Router /users/{userId}/combos [get]
 func (h *UserHandler) GetUserCombos(c *gin.Context) {
 	// =========================================================================
 	// PARSE USER ID FROM URL

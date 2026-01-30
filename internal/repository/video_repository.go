@@ -1,12 +1,3 @@
-// =============================================================================
-// FILE: internal/repository/video_repository.go
-// PURPOSE: Database operations for trick videos
-// =============================================================================
-//
-// This repository handles all video-related database operations.
-// It's kept separate from TrickRepository to follow Single Responsibility Principle.
-// =============================================================================
-
 package repository
 
 import (

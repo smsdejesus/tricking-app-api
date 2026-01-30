@@ -1,15 +1,3 @@
-// =============================================================================
-// FILE: internal/services/category_service.go
-// PURPOSE: Business logic for categories
-// =============================================================================
-//
-// This is a simple service - categories don't have complex business logic.
-// However, having a service layer provides:
-// 1. Consistency with other entities
-// 2. A place to add caching later
-// 3. A place to add business logic if needed (e.g., sorting by popularity)
-// =============================================================================
-
 package services
 
 import (
@@ -31,7 +19,7 @@ type CategoryService struct {
 }
 
 // NewCategoryService creates a new CategoryService instance
-func NewCategoryService(categoryRepo *repository.CategoryRepository) *CategoryService {
+func NewCategoryService(categoryRepo repository.CategoryRepositoryInterface) *CategoryService {
 	return &CategoryService{categoryRepo: categoryRepo}
 }
 

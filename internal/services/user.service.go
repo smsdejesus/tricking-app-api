@@ -1,8 +1,3 @@
-// =============================================================================
-// FILE: internal/services/user_service.go
-// PURPOSE: Business logic for user-related operations
-// =============================================================================
-
 package services
 
 import (
@@ -29,7 +24,7 @@ type UserService struct {
 }
 
 // NewUserService creates a new UserService instance
-func NewUserService(userRepo *repository.UserRepository) *UserService {
+func NewUserService(userRepo repository.UserRepositoryInterface) *UserService {
 	return &UserService{userRepo: userRepo}
 }
 

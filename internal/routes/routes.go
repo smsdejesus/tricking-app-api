@@ -28,13 +28,14 @@ func NewRouter(
 
 	// V1 ROUTES
 	{
+		// GET /api/v1/tricks - List all tricks (for dropdowns/search)
+		v1.GET("/tricks", trickHandler.ListTricks)
+
 		// ======================================================================
 		// TRICK ROUTES
 		// ======================================================================
-		tricks := v1.Group("/tricks")
+		tricks := v1.Group("/trick")
 		{
-			// GET /api/v1/tricks - List all tricks (for dropdowns)
-			tricks.GET("", trickHandler.ListTricks)
 
 			// GET /api/v1/tricks/:id - Get simple trick details
 			// :id is a URL parameter - any value in that position is captured
@@ -43,7 +44,7 @@ func NewRouter(
 
 			// GET /api/v1/tricks/:id/dictionary - Get full trick details with videos
 			// Nested resource - the dictionary "belongs to" a specific trick
-			tricks.GET("/:id/dictionary", trickHandler.GetTrickDictionary)
+			tricks.GET("/detail/:id", trickHandler.GetTrickFullDetails)
 		}
 
 		// ======================================================================
@@ -54,7 +55,7 @@ func NewRouter(
 			// GET /api/v1/combos/generate - Generate combo with filters
 			// Using GET because this is a read operation (no data created)
 			// Filters are passed as query parameters
-			combos.GET("/generate", comboHandler.GenerateCombo)
+			combos.GET("/generate", comboHandler.GenerateComboWithFilters)
 
 			// GET /api/v1/combos/generate/simple - Generate combo with size only
 			combos.GET("/generate/simple", comboHandler.GenerateSimpleCombo)

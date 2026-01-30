@@ -1,8 +1,3 @@
-// =============================================================================
-// FILE: internal/handlers/category_handler.go
-// PURPOSE: HTTP request handling for category endpoints
-// =============================================================================
-
 package handlers
 
 import (
@@ -23,19 +18,7 @@ func NewCategoryHandler(categoryService *services.CategoryService) *CategoryHand
 	return &CategoryHandler{categoryService: categoryService}
 }
 
-// =============================================================================
-// ENDPOINT: GET /categories
-// PURPOSE: List all categories for UI dropdowns
-// =============================================================================
-
 // ListCategories returns all trick categories
-// @Summary List all categories
-// @Description Get all trick categories for filter dropdowns
-// @Tags categories
-// @Produce json
-// @Success 200 {object} map[string]interface{} "categories array with count"
-// @Failure 500 {object} map[string]string "Server error"
-// @Router /categories [get]
 func (h *CategoryHandler) ListCategories(c *gin.Context) {
 	categories, err := h.categoryService.GetAllCategories(c.Request.Context())
 	if err != nil {

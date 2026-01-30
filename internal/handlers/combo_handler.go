@@ -1,8 +1,3 @@
-// =============================================================================
-// FILE: internal/handlers/combo_handler.go
-// PURPOSE: HTTP request handling for combo endpoints
-// =============================================================================
-
 package handlers
 
 import (
@@ -25,23 +20,8 @@ func NewComboHandler(comboService *services.ComboService) *ComboHandler {
 	return &ComboHandler{comboService: comboService}
 }
 
-// =============================================================================
-// ENDPOINT: GET /combos/generate
-// PURPOSE: Generate a combo with filters
-// =============================================================================
-
-// GenerateCombo creates a new random combo based on filters
-// @Summary Generate a combo with filters
-// @Description Generate a random trick combo using provided filters
-// @Tags combos
-// @Accept json
-// @Produce json
-// @Param request query models.ComboGenerateRequest true "Generation parameters"
-// @Success 200 {object} models.GeneratedComboResponse
-// @Failure 400 {object} map[string]string "Invalid parameters"
-// @Failure 422 {object} map[string]string "Not enough tricks available"
-// @Router /combos/generate [get]
-func (h *ComboHandler) GenerateCombo(c *gin.Context) {
+// GenerateComboWithFilters creates a new random combo based on filters
+func (h *ComboHandler) GenerateComboWithFilters(c *gin.Context) {
 	var req models.ComboGenerateRequest
 
 	// ShouldBindQuery also performs validation based on `binding` struct tags
@@ -53,11 +33,8 @@ func (h *ComboHandler) GenerateCombo(c *gin.Context) {
 		})
 		return
 	}
-
-	// ==========================================================================
-	// CALL SERVICE
-	// ==========================================================================
-	combo, err := h.comboService.GenerateCombo(c.Request.Context(), req)
+	// Generate the combo
+	combo, err := h.comboService.GenerateComboWithFilters(c.Request.Context(), req)
 	if err != nil {
 		// Check for specific errors
 		if errors.Is(err, services.ErrInsufficientTricks) {
@@ -84,21 +61,7 @@ func (h *ComboHandler) GenerateCombo(c *gin.Context) {
 	c.JSON(http.StatusOK, combo)
 }
 
-// =============================================================================
-// ENDPOINT: GET /combos/generate/simple
-// PURPOSE: Generate a combo with only size (no filters)
-// =============================================================================
-
 // GenerateSimpleCombo creates a new random combo based only on size
-// @Summary Generate a simple combo
-// @Description Generate a random trick combo using only size parameter
-// @Tags combos
-// @Produce json
-// @Param size query int true "Number of tricks in combo" minimum(1) maximum(20)
-// @Success 200 {object} models.GeneratedComboResponse
-// @Failure 400 {object} map[string]string "Invalid size"
-// @Failure 422 {object} map[string]string "Not enough tricks available"
-// @Router /combos/generate/simple [get]
 func (h *ComboHandler) GenerateSimpleCombo(c *gin.Context) {
 	// ==========================================================================
 	// PARSE SINGLE QUERY PARAMETER
@@ -110,7 +73,7 @@ func (h *ComboHandler) GenerateSimpleCombo(c *gin.Context) {
 	if err := c.ShouldBindQuery(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error":   "Invalid request parameters",
-			"details": "size is required and must be between 1 and 20",
+			"details": "size is required and must be between 1 and 10",
 		})
 		return
 	}
@@ -122,7 +85,7 @@ func (h *ComboHandler) GenerateSimpleCombo(c *gin.Context) {
 	// sizeStr := c.DefaultQuery("size", "3") // Returns "3" if not present
 	//
 	// size, err := strconv.Atoi(sizeStr)
-	// if err != nil || size < 1 || size > 20 {
+	// if err != nil || size < 1 || size > 10 {
 	//     c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid size"})
 	//     return
 	// }

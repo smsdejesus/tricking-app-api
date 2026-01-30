@@ -1,25 +1,3 @@
-// =============================================================================
-// FILE: internal/repository/trick_repository.go
-// PURPOSE: Database operations for tricks - the "data access layer"
-// =============================================================================
-//
-// REPOSITORY PATTERN:
-// The repository pattern abstracts database operations behind an interface.
-// This means:
-// 1. Your service layer doesn't know about SQL - it just calls repository methods
-// 2. You can swap PostgreSQL for MySQL by creating a new repository implementation
-// 3. You can easily mock the repository for unit testing
-//
-// NAMING CONVENTIONS:
-// - Repository suffix: TrickRepository, VideoRepository, etc.
-// - Method names describe the data operation: GetByID, FindAll, Create, Update, Delete
-// - "Get" typically returns one item or error
-// - "Find" or "List" typically returns multiple items
-// - "Create" inserts new data
-// - "Update" modifies existing data
-// - "Delete" removes data
-// =============================================================================
-
 package repository
 
 import (
