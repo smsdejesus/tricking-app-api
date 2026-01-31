@@ -3,6 +3,7 @@ package handlers
 import (
 	"errors"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 
@@ -63,34 +64,16 @@ func (h *ComboHandler) GenerateComboWithFilters(c *gin.Context) {
 
 // GenerateSimpleCombo creates a new random combo based only on size
 func (h *ComboHandler) GenerateSimpleCombo(c *gin.Context) {
-	// ==========================================================================
-	// PARSE SINGLE QUERY PARAMETER
-	// ==========================================================================
-	// For simple cases, you can use ShouldBindQuery with a small struct
-	// or parse individual parameters directly
+	//sizeStr := c.Query("size") // Returns empty string if not present
+	sizeStr := c.DefaultQuery("size", "3") // Returns "3" if not present
 
-	var req models.ComboGenerateSimpleRequest
-	if err := c.ShouldBindQuery(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error":   "Invalid request parameters",
-			"details": "size is required and must be between 1 and 10",
-		})
+	size, err := strconv.Atoi(sizeStr)
+	if err != nil || size < 3 || size > 10 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid size"})
 		return
 	}
 
-	// ==========================================================================
-	// ALTERNATIVE: Manual parsing (for reference)
-	// ==========================================================================
-	// sizeStr := c.Query("size") // Returns empty string if not present
-	// sizeStr := c.DefaultQuery("size", "3") // Returns "3" if not present
-	//
-	// size, err := strconv.Atoi(sizeStr)
-	// if err != nil || size < 1 || size > 10 {
-	//     c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid size"})
-	//     return
-	// }
-
-	combo, err := h.comboService.GenerateSimpleCombo(c.Request.Context(), req.Size)
+	combo, err := h.comboService.GenerateSimpleCombo(c.Request.Context(), size)
 	if err != nil {
 		if errors.Is(err, services.ErrInsufficientTricks) {
 			c.JSON(http.StatusUnprocessableEntity, gin.H{
@@ -107,7 +90,7 @@ func (h *ComboHandler) GenerateSimpleCombo(c *gin.Context) {
 		}
 
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to generate combo",
+			"error": err.Error(),
 		})
 		return
 	}

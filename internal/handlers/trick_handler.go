@@ -32,7 +32,6 @@ package handlers
 import (
 	"errors"
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 
@@ -46,14 +45,14 @@ type TrickHandler struct {
 }
 
 // NewTrickHandler creates a new TrickHandler instance
-func NewTrickHandler(trickService *services.TrickService) *TrickHandler {
+func NewTrickHandler(trickService services.TrickServiceInterface) *TrickHandler {
 	return &TrickHandler{trickService: trickService}
 }
 
-// ListTricks returns a simple list of all tricks
-func (h *TrickHandler) ListTricks(c *gin.Context) {
+// GetSimpleTricksList returns a simple list of all tricks
+func (h *TrickHandler) GetSimpleTricksList(c *gin.Context) {
 	// Call service method
-	tricks, err := h.trickService.GetTricksList(c.Request.Context())
+	tricks, err := h.trickService.GetSimpleTricksList(c.Request.Context())
 	if err != nil {
 		// Log the error (in production, use a proper logger)
 		// log.Printf("Error listing tricks: %v", err)
@@ -73,28 +72,15 @@ func (h *TrickHandler) ListTricks(c *gin.Context) {
 	})
 }
 
-// GetTrickSimple returns basic trick details
-func (h *TrickHandler) GetTrickSimple(c *gin.Context) {
-	// ==========================================================================
-	// PARSE URL PARAMETER
-	// ==========================================================================
-	// c.Param("id") gets the :id from the URL path /tricks/:id
-	// The parameter name "id" MUST match what's defined in the route
-	idStr := c.Param("id")
-
-	// Convert string to int
-	id, err := strconv.Atoi(idStr)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Invalid trick ID - must be a number",
-		})
-		return
-	}
+// GetSimpleTrickById returns basic trick details
+func (h *TrickHandler) GetSimpleTrickById(c *gin.Context) {
+	// parse ID from URL parameter
+	id := c.Param("id")
 
 	// ==========================================================================
 	// CALL SERVICE
 	// ==========================================================================
-	trick, err := h.trickService.GetTrickSimple(c.Request.Context(), id)
+	trick, err := h.trickService.GetSimpleTrickById(c.Request.Context(), id)
 	if err != nil {
 		// Check for specific error types to return appropriate status codes
 		if errors.Is(err, services.ErrTrickNotFound) {
@@ -117,21 +103,14 @@ func (h *TrickHandler) GetTrickSimple(c *gin.Context) {
 	c.JSON(http.StatusOK, trick)
 }
 
-// GetTrickFullDetails returns full trick details with videos
+// GetFullDetailsTrickById returns full trick details with videos
 
-func (h *TrickHandler) GetTrickFullDetails(c *gin.Context) {
+func (h *TrickHandler) GetFullDetailsTrickById(c *gin.Context) {
 	// Parse ID (same as above)
-	idStr := c.Param("id")
-	id, err := strconv.Atoi(idStr)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Invalid trick ID - must be a number",
-		})
-		return
-	}
+	id := c.Param("id")
 
 	// Call the dictionary service method (includes videos)
-	trick, err := h.trickService.GetTrickFullDetails(c.Request.Context(), id)
+	trick, err := h.trickService.GetFullDetailsTrickById(c.Request.Context(), id)
 	if err != nil {
 		if errors.Is(err, services.ErrTrickNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{

@@ -29,7 +29,7 @@ var ErrNotFound = errors.New("resource not found")
 // NAMING: Interfaces in Go often end with "er" (Reader, Writer) or describe capability
 // For repositories, "Interface" suffix is common for clarity
 type TrickRepositoryInterface interface {
-	GetByID(ctx context.Context, id int) (*models.Trick, error)
+	GetByID(ctx context.Context, id string) (*models.Trick, error)
 	FindAll(ctx context.Context) ([]models.Trick, error)
 	FindSimpleList(ctx context.Context) ([]models.TrickSimpleResponse, error)
 	FindByFilters(ctx context.Context, filters TrickFilters) ([]models.Trick, error)
@@ -63,17 +63,17 @@ func NewTrickRepository(pool *pgxpool.Pool) *TrickRepository {
 
 // GetByID retrieves a single trick by its ID
 // Returns ErrNotFound if the trick doesn't exist
-func (r *TrickRepository) GetByID(ctx context.Context, id int) (*models.Trick, error) {
+func (r *TrickRepository) GetByID(ctx context.Context, id string) (*models.Trick, error) {
 	// SQL query to fetch a single trick
 	// $1 is a placeholder for the first parameter (prevents SQL injection)
 	// NEVER use fmt.Sprintf to build queries with user input!
 	query := `
 		SELECT 
-			id, name, description, difficulty, execution_notes,
+			slug as id, name, description, difficulty, execution_notes,
 			created_by, creator_name, created_at, updated_at,
 			takeoff_stance_id, landing_stance_id, flip_id, rotation, weight
 		FROM trick_data.tricks
-		WHERE id = $1
+		WHERE slug = $1
 	`
 
 	// Create an empty Trick to scan results into
@@ -82,7 +82,7 @@ func (r *TrickRepository) GetByID(ctx context.Context, id int) (*models.Trick, e
 	// QueryRow is used when expecting exactly one row
 	// Scan maps columns to struct fields in ORDER - must match SELECT order!
 	err := r.pool.QueryRow(ctx, query, id).Scan(
-		&trick.ID,
+		&trick.ID, // actually "slug" in DB, mapped to ID field
 		&trick.Name,
 		&trick.Description,
 		&trick.Difficulty,
@@ -97,8 +97,6 @@ func (r *TrickRepository) GetByID(ctx context.Context, id int) (*models.Trick, e
 		&trick.Rotation,
 		&trick.Weight,
 	)
-	fmt.Println("Retrieved trick:", trick)
-	fmt.Println("Retrieved ERROR:", err)
 	if err != nil {
 		// Check if it's a "no rows" error
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -106,7 +104,7 @@ func (r *TrickRepository) GetByID(ctx context.Context, id int) (*models.Trick, e
 			return nil, ErrNotFound
 		}
 		// Wrap other errors with context
-		return nil, fmt.Errorf("failed to get trick by ID %d: %w", id, err)
+		return nil, fmt.Errorf("failed to get trick by ID %s: %w", id, err)
 	}
 
 	return &trick, nil
@@ -116,8 +114,8 @@ func (r *TrickRepository) GetByID(ctx context.Context, id int) (*models.Trick, e
 func (r *TrickRepository) FindAll(ctx context.Context) ([]models.Trick, error) {
 	query := `
 		SELECT 
-			id, name, description, difficulty, execution_notes,
-			created_by, creator_name, created_at, updated_at,
+			slug as id, name, description, difficulty, execution_notes,
+			created_by, creator_name, created_at,
 			takeoff_stance_id, landing_stance_id, flip_id, rotation, weight
 		FROM trick_data.tricks
 		ORDER BY name ASC
@@ -143,7 +141,7 @@ func (r *TrickRepository) FindAll(ctx context.Context) ([]models.Trick, error) {
 func (r *TrickRepository) FindSimpleList(ctx context.Context) ([]models.TrickSimpleResponse, error) {
 	// Only select the columns we need - more efficient!
 	query := `
-		SELECT id, name
+		SELECT slug as id, name
 		FROM trick_data.tricks
 		ORDER BY name ASC
 	`
@@ -170,14 +168,11 @@ func (r *TrickRepository) FindByFilters(ctx context.Context, filters TrickFilter
 	// ==========================================================================
 	// We build the query dynamically based on which filters are provided.
 	// This is a common pattern for search/filter functionality.
-	//
-	// IMPORTANT: We use parameterized queries ($1, $2, etc.) to prevent SQL injection.
-	// Never concatenate user input directly into SQL strings!
 
 	// Base query
 	query := `
 		SELECT 
-			id, name, description, difficulty, execution_notes,
+			slug as id, name, description, difficulty, execution_notes,
 			created_by, creator_name, created_at, updated_at,
 			takeoff_stance_id, landing_stance_id, flip_id, rotation, weight
 		FROM trick_data.tricks
@@ -214,7 +209,7 @@ func (r *TrickRepository) FindByFilters(ctx context.Context, filters TrickFilter
 
 	// Exclude specific tricks
 	if len(filters.ExcludeTrickIDs) > 0 {
-		query += fmt.Sprintf(" AND id != ALL($%d)", argPosition)
+		query += fmt.Sprintf(" AND slug != ALL($%d)", argPosition)
 		args = append(args, filters.ExcludeTrickIDs)
 		argPosition++
 	}
@@ -243,23 +238,3 @@ func (r *TrickRepository) FindByFilters(ctx context.Context, filters TrickFilter
 
 	return tricks, nil
 }
-
-// =============================================================================
-// ALTERNATIVE: Using pgx.CollectRows for cleaner code (pgx v5)
-// =============================================================================
-// pgx v5 provides helper functions that reduce boilerplate:
-//
-// func (r *TrickRepository) FindAllClean(ctx context.Context) ([]models.Trick, error) {
-//     query := `SELECT id, name, ... FROM tricks`
-//
-//     rows, err := r.pool.Query(ctx, query)
-//     if err != nil {
-//         return nil, err
-//     }
-//
-//     // pgx.CollectRows handles the iteration and scanning
-//     return pgx.CollectRows(rows, pgx.RowToStructByName[models.Trick])
-// }
-//
-// Note: RowToStructByName requires your struct fields to have `db:"column_name"` tags
-// =============================================================================

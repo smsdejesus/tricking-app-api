@@ -24,9 +24,9 @@ var ErrTrickNotFound = errors.New("trick not found")
 
 // TrickServiceInterface defines the contract for trick business operations
 type TrickServiceInterface interface {
-	GetTrickSimple(ctx context.Context, id int) (*models.TrickDetailResponse, error)
-	GetTrickFullDetails(ctx context.Context, id int) (*models.TrickFullDetailsResponse, error)
-	GetTricksList(ctx context.Context) ([]models.TrickSimpleResponse, error)
+	GetSimpleTrickById(ctx context.Context, id string) (*models.TrickDetailResponse, error)
+	GetFullDetailsTrickById(ctx context.Context, id string) (*models.TrickFullDetailsResponse, error)
+	GetSimpleTricksList(ctx context.Context) ([]models.TrickSimpleResponse, error)
 }
 
 // =============================================================================
@@ -49,9 +49,9 @@ func NewTrickService(trickRepo repository.TrickRepositoryInterface, videoRepo re
 	}
 }
 
-// GetTrickSimple retrieves basic trick details without videos
+// GetSimpleTrickById retrieves basic trick details without videos
 // "simple" endpoint
-func (s *TrickService) GetTrickSimple(ctx context.Context, id int) (*models.TrickDetailResponse, error) {
+func (s *TrickService) GetSimpleTrickById(ctx context.Context, id string) (*models.TrickDetailResponse, error) {
 	// Fetch trick from repository
 	trick, err := s.trickRepo.GetByID(ctx, id)
 	if err != nil {
@@ -70,13 +70,8 @@ func (s *TrickService) GetTrickSimple(ctx context.Context, id int) (*models.Tric
 	return &response, nil
 }
 
-// GetTrickFullDetails retrieves full trick details WITH videos
-func (s *TrickService) GetTrickFullDetails(ctx context.Context, id int) (*models.TrickFullDetailsResponse, error) {
-	// ==========================================================================
-	// ORCHESTRATION EXAMPLE
-	// ==========================================================================
-	// This method combines data from TWO repositories (tricks + videos)
-	// The handler doesn't need to know these are separate database queries
+// GetFullDetailsTrickById retrieves full trick details WITH videos
+func (s *TrickService) GetFullDetailsTrickById(ctx context.Context, id string) (*models.TrickFullDetailsResponse, error) {
 
 	// Step 1: Get the trick
 	trick, err := s.trickRepo.GetByID(ctx, id)
@@ -105,8 +100,9 @@ func (s *TrickService) GetTrickFullDetails(ctx context.Context, id int) (*models
 		videoResponses = append(videoResponses, vr)
 
 		// Track the featured video for convenience
-		if video.IsFeatured && featuredVideo == nil {
+		if video.IsFeatured {
 			featuredVideo = &vr
+			break
 		}
 	}
 
@@ -119,47 +115,12 @@ func (s *TrickService) GetTrickFullDetails(ctx context.Context, id int) (*models
 	return response, nil
 }
 
-// GetTricksList retrieves a minimal list for dropdown menus
-func (s *TrickService) GetTricksList(ctx context.Context) ([]models.TrickSimpleResponse, error) {
-	// Direct pass-through - no business logic needed
-	// But having this in a service still provides:
-	// 1. A consistent interface for handlers
-	// 2. A place to add caching later
-	// 3. A place to add filtering/sorting logic later
+// GetSimpleTricksList retrieves a minimal list for dropdown menus
+func (s *TrickService) GetSimpleTricksList(ctx context.Context) ([]models.TrickSimpleResponse, error) {
+	// Call repository method
 	tricks, err := s.trickRepo.FindSimpleList(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get tricks list: %w", err)
 	}
 	return tricks, nil
 }
-
-// =============================================================================
-// OPTIONAL: Caching example
-// =============================================================================
-//
-//
-// type TrickService struct {
-//     trickRepo    repository.TrickRepositoryInterface
-//     videoRepo    repository.VideoRepositoryInterface
-//     cache        *cache.Cache  // Some caching library
-//     cacheTTL     time.Duration
-// }
-//
-// func (s *TrickService) GetTricksListCached(ctx context.Context) ([]models.TrickSimpleResponse, error) {
-//     // Try cache first
-//     if cached, ok := s.cache.Get("tricks_list"); ok {
-//         return cached.([]models.TrickSimpleResponse), nil
-//     }
-//
-//     // Cache miss - fetch from database
-//     tricks, err := s.trickRepo.FindSimpleList(ctx)
-//     if err != nil {
-//         return nil, err
-//     }
-//
-//     // Store in cache
-//     s.cache.Set("tricks_list", tricks, s.cacheTTL)
-//
-//     return tricks, nil
-// }
-// =============================================================================

@@ -29,13 +29,10 @@ func NewCategoryRepository(pool *pgxpool.Pool) *CategoryRepository {
 // This is used to populate dropdown menus in the UI
 func (r *CategoryRepository) FindAll(ctx context.Context) ([]models.Category, error) {
 	query := `
-		SELECT id, name, COALESCE(parent_id, '') as type
+		SELECT id, name, parent_id
 		FROM trick_data.categories
-		ORDER BY name ASC
+		ORDER BY parent_id DESC, name ASC
 	`
-	// COALESCE handles NULL values - if type is NULL, use empty string
-	// This prevents NULL scan issues
-
 	rows, err := r.pool.Query(ctx, query)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query categories: %w", err)

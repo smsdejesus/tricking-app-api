@@ -12,8 +12,8 @@ import (
 
 // VideoRepositoryInterface defines the contract for video data operations
 type VideoRepositoryInterface interface {
-	FindByTrickID(ctx context.Context, trickID int) ([]models.TrickVideo, error)
-	GetFeaturedByTrickID(ctx context.Context, trickID int) (*models.TrickVideo, error)
+	FindByTrickID(ctx context.Context, trickID string) ([]models.TrickVideo, error)
+	GetFeaturedByTrickID(ctx context.Context, trickID string) (*models.TrickVideo, error)
 }
 
 // VideoRepository implements VideoRepositoryInterface
@@ -27,7 +27,7 @@ func NewVideoRepository(pool *pgxpool.Pool) *VideoRepository {
 }
 
 // FindByTrickID retrieves all videos for a specific trick
-func (r *VideoRepository) FindByTrickID(ctx context.Context, trickID int) ([]models.TrickVideo, error) {
+func (r *VideoRepository) FindByTrickID(ctx context.Context, trickID string) ([]models.TrickVideo, error) {
 	query := `
 		SELECT 
 			id, trick_id, video_url, thumbnail_url,
@@ -42,7 +42,7 @@ func (r *VideoRepository) FindByTrickID(ctx context.Context, trickID int) ([]mod
 
 	rows, err := r.pool.Query(ctx, query, trickID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to query videos for trick %d: %w", trickID, err)
+		return nil, fmt.Errorf("failed to query videos for trick %s: %w", trickID, err)
 	}
 
 	// pgx.CollectRows handles iteration, scanning, and closing rows automatically
@@ -56,7 +56,7 @@ func (r *VideoRepository) FindByTrickID(ctx context.Context, trickID int) ([]mod
 
 // GetFeaturedByTrickID retrieves the featured video for a trick
 // Returns nil (not error) if no featured video exists
-func (r *VideoRepository) GetFeaturedByTrickID(ctx context.Context, trickID int) (*models.TrickVideo, error) {
+func (r *VideoRepository) GetFeaturedByTrickID(ctx context.Context, trickID string) (*models.TrickVideo, error) {
 	query := `
 		SELECT 
 			id, trick_id, video_url, thumbnail_url,
@@ -87,7 +87,7 @@ func (r *VideoRepository) GetFeaturedByTrickID(ctx context.Context, trickID int)
 		if err.Error() == "no rows in result set" {
 			return nil, nil
 		}
-		return nil, fmt.Errorf("failed to get featured video for trick %d: %w", trickID, err)
+		return nil, fmt.Errorf("failed to get featured video for trick %s: %w", trickID, err)
 	}
 
 	return &video, nil

@@ -15,7 +15,7 @@ import (
 // The `json:"field_name"` tags control JSON serialization for API responses
 type Trick struct {
 	// ID is the primary key
-	ID int `db:"id" json:"id"`
+	ID string `db:"id" json:"id"`
 
 	// URL-friendly unique identifier for the trick
 	Slug string `db:"slug" json:"slug"`
@@ -95,11 +95,10 @@ type TrickVideo struct {
 }
 
 // Category represents a trick category (for filtering)
-// NEED to create this table if it doesn't exist
 type Category struct {
 	ID       int    `db:"id" json:"id"`
 	Name     string `db:"name" json:"name"`
-	ParentID *int   `db:"parent_id" json:"parent_id,omitempty"`
+	ParentID *int   `db:"parent_id" json:"parent_id"`
 }
 
 // Combo represents a saved combo by a user
@@ -125,14 +124,14 @@ type ComboTrick struct {
 
 // TrickSimpleResponse is a minimal trick representation for dropdowns/lists
 type TrickSimpleResponse struct {
-	ID   int    `json:"id"`
+	ID   string `json:"id"`
 	Name string `json:"name"`
 }
 
 // TrickDetailResponse is the full trick data without videos
 // Used for the "simple" version of the trick detail endpoint
 type TrickDetailResponse struct {
-	ID              int        `json:"id"`
+	ID              string     `json:"id"`
 	Name            string     `json:"name"`
 	Description     *string    `json:"description,omitempty"`
 	Difficulty      *int64     `json:"difficulty,omitempty"`
@@ -184,7 +183,7 @@ type GeneratedComboResponse struct {
 type CategoryResponse struct {
 	ID       int    `json:"id"`
 	Name     string `json:"name"`
-	ParentID *int   `json:"parent_id,omitempty"`
+	ParentID *int   `json:"parent_id"`
 }
 
 // =============================================================================

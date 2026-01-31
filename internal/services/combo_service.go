@@ -42,7 +42,7 @@ func (s *ComboService) GenerateComboWithFilters(ctx context.Context, req models.
 	// ==========================================================================
 	// VALIDATION
 	// ==========================================================================
-	if req.Size < 1 {
+	if req.Size < 3 {
 		return nil, ErrInvalidComboSize
 	}
 
@@ -90,7 +90,7 @@ func (s *ComboService) GenerateComboWithFilters(ctx context.Context, req models.
 // GenerateSimpleCombo creates a combo based only on size (no filters)
 // This is the "simple" version
 func (s *ComboService) GenerateSimpleCombo(ctx context.Context, size int) (*models.GeneratedComboResponse, error) {
-	if size < 1 {
+	if size < 3 {
 		return nil, ErrInvalidComboSize
 	}
 
@@ -104,8 +104,9 @@ func (s *ComboService) GenerateSimpleCombo(ctx context.Context, size int) (*mode
 		return nil, fmt.Errorf("%w: need %d tricks, only %d available",
 			ErrInsufficientTricks, size, len(allTricks))
 	}
-
+	fmt.Printf("Total tricks available: %d\n", len(allTricks))
 	selectedTricks := s.selectTricksWeighted(allTricks, size)
+	fmt.Printf("Selected %d tricks for combo\n", len(selectedTricks))
 	return s.buildComboResponse(selectedTricks), nil
 }
 
@@ -269,7 +270,7 @@ func (s *ComboService) filterCompatibleTricks(tricks []models.Trick, landingStan
 }
 
 // removeTrick removes a trick from a slice by ID
-func (s *ComboService) removeTrick(tricks []models.Trick, id int) []models.Trick {
+func (s *ComboService) removeTrick(tricks []models.Trick, id string) []models.Trick {
 	for i, t := range tricks {
 		if t.ID == id {
 			return append(tricks[:i], tricks[i+1:]...)
