@@ -30,9 +30,12 @@ var ErrNotFound = errors.New("resource not found")
 // For repositories, "Interface" suffix is common for clarity
 type TrickRepositoryInterface interface {
 	GetByID(ctx context.Context, id string) (*models.Trick, error)
+	GetByIDWithTimestamp(ctx context.Context, id string) (*models.Trick, error)
 	FindAll(ctx context.Context) ([]models.Trick, error)
 	FindSimpleList(ctx context.Context) ([]models.TrickSimpleResponse, error)
 	FindByFilters(ctx context.Context, filters TrickFilters) ([]models.Trick, error)
+	GetLastModified(ctx context.Context) (int64, error)
+	GetLastModifiedByID(ctx context.Context, id string) (int64, error)
 }
 
 // TrickFilters holds optional filters for querying tricks
@@ -237,4 +240,86 @@ func (r *TrickRepository) FindByFilters(ctx context.Context, filters TrickFilter
 	}
 
 	return tricks, nil
+}
+
+// GetByIDWithTimestamp retrieves a single trick with updated_at timestamp
+// Used for ETag generation on individual trick endpoints
+func (r *TrickRepository) GetByIDWithTimestamp(ctx context.Context, id string) (*models.Trick, error) {
+	query := `
+		SELECT
+			slug as id, name, description, difficulty, execution_notes,
+			created_by, creator_name, created_at, updated_at,
+			takeoff_stance_id, landing_stance_id, flip_id, rotation, weight
+		FROM trick_data.tricks
+		WHERE slug = $1
+	`
+
+	var trick models.Trick
+	err := r.pool.QueryRow(ctx, query, id).Scan(
+		&trick.ID,
+		&trick.Name,
+		&trick.Description,
+		&trick.Difficulty,
+		&trick.ExecutionNotes,
+		&trick.CreatedBy,
+		&trick.CreatorName,
+		&trick.CreatedAt,
+		&trick.UpdatedAt,
+		&trick.TakeoffStanceID,
+		&trick.LandingStanceID,
+		&trick.FlipID,
+		&trick.Rotation,
+		&trick.Weight,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrNotFound
+		}
+		return nil, fmt.Errorf("failed to get trick with timestamp by ID %s: %w", id, err)
+	}
+
+	return &trick, nil
+}
+
+// GetLastModified returns the latest modification timestamp across all tricks
+// Used for ETag generation on list endpoints
+// Returns Unix timestamp (seconds since epoch)
+func (r *TrickRepository) GetLastModified(ctx context.Context) (int64, error) {
+	query := `
+		SELECT COALESCE(
+			EXTRACT(EPOCH FROM MAX(GREATEST(created_at, COALESCE(updated_at, created_at))))::BIGINT,
+			0
+		)
+		FROM trick_data.tricks
+	`
+
+	var timestamp int64
+	err := r.pool.QueryRow(ctx, query).Scan(&timestamp)
+	if err != nil {
+		return 0, fmt.Errorf("failed to get last modified timestamp: %w", err)
+	}
+
+	return timestamp, nil
+}
+
+// GetLastModifiedByID returns the modification timestamp for a specific trick
+// Used for ETag generation on individual trick endpoints
+// Returns Unix timestamp (seconds since epoch)
+func (r *TrickRepository) GetLastModifiedByID(ctx context.Context, id string) (int64, error) {
+	query := `
+		SELECT EXTRACT(EPOCH FROM GREATEST(created_at, COALESCE(updated_at, created_at)))::BIGINT
+		FROM trick_data.tricks
+		WHERE slug = $1
+	`
+
+	var timestamp int64
+	err := r.pool.QueryRow(ctx, query, id).Scan(&timestamp)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return 0, ErrNotFound
+		}
+		return 0, fmt.Errorf("failed to get last modified timestamp for trick %s: %w", id, err)
+	}
+
+	return timestamp, nil
 }

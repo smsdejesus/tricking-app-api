@@ -17,7 +17,7 @@ type ComboHandler struct {
 }
 
 // NewComboHandler creates a new ComboHandler instance
-func NewComboHandler(comboService *services.ComboService) *ComboHandler {
+func NewComboHandler(comboService services.ComboServiceInterface) *ComboHandler {
 	return &ComboHandler{comboService: comboService}
 }
 

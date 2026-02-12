@@ -104,9 +104,7 @@ func (s *ComboService) GenerateSimpleCombo(ctx context.Context, size int) (*mode
 		return nil, fmt.Errorf("%w: need %d tricks, only %d available",
 			ErrInsufficientTricks, size, len(allTricks))
 	}
-	fmt.Printf("Total tricks available: %d\n", len(allTricks))
 	selectedTricks := s.selectTricksWeighted(allTricks, size)
-	fmt.Printf("Selected %d tricks for combo\n", len(selectedTricks))
 	return s.buildComboResponse(selectedTricks), nil
 }
 

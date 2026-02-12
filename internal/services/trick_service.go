@@ -27,6 +27,8 @@ type TrickServiceInterface interface {
 	GetSimpleTrickById(ctx context.Context, id string) (*models.TrickDetailResponse, error)
 	GetFullDetailsTrickById(ctx context.Context, id string) (*models.TrickFullDetailsResponse, error)
 	GetSimpleTricksList(ctx context.Context) ([]models.TrickSimpleResponse, error)
+	GetLastModified(ctx context.Context) (int64, error)
+	GetLastModifiedByID(ctx context.Context, id string) (int64, error)
 }
 
 // =============================================================================
@@ -123,4 +125,27 @@ func (s *TrickService) GetSimpleTricksList(ctx context.Context) ([]models.TrickS
 		return nil, fmt.Errorf("failed to get tricks list: %w", err)
 	}
 	return tricks, nil
+}
+
+// GetLastModified returns the latest modification timestamp across all tricks
+// Used for efficient ETag generation on list endpoints
+func (s *TrickService) GetLastModified(ctx context.Context) (int64, error) {
+	timestamp, err := s.trickRepo.GetLastModified(ctx)
+	if err != nil {
+		return 0, fmt.Errorf("failed to get last modified timestamp: %w", err)
+	}
+	return timestamp, nil
+}
+
+// GetLastModifiedByID returns the modification timestamp for a specific trick
+// Used for efficient ETag generation on individual trick endpoints
+func (s *TrickService) GetLastModifiedByID(ctx context.Context, id string) (int64, error) {
+	timestamp, err := s.trickRepo.GetLastModifiedByID(ctx, id)
+	if err != nil {
+		if errors.Is(err, repository.ErrNotFound) {
+			return 0, ErrTrickNotFound
+		}
+		return 0, fmt.Errorf("failed to get last modified timestamp for trick: %w", err)
+	}
+	return timestamp, nil
 }
